@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
+import os
 matplotlib.use('Agg')
+
+# Folder this script lives in - works no matter what directory
+# Streamlit Cloud launches the app from.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 st.set_page_config(page_title="IPL Dashboard", page_icon="🏏", layout="wide")
 
@@ -46,9 +51,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load data
-df = pd.read_csv("matches.csv")
+matches_path = os.path.join(BASE_DIR, "matches.csv")
+deliveries_path = os.path.join(BASE_DIR, "deliveries.csv")
+
+missing = [f for f in [matches_path, deliveries_path] if not os.path.exists(f)]
+if missing:
+    st.error("⚠️ Required data file(s) not found in the app folder:")
+    for f in missing:
+        st.code(os.path.basename(f))
+    st.info(
+        "Make sure **matches.csv** and **deliveries.csv** are committed to your "
+        "GitHub repo in the same folder as this script, then redeploy."
+    )
+    st.write("Files currently found in app folder:", os.listdir(BASE_DIR))
+    st.stop()
+
+df = pd.read_csv(matches_path)
 df["season"] = df["season"].astype(str).str[:4]
-deliveries = pd.read_csv("deliveries.csv")
+deliveries = pd.read_csv(deliveries_path)
 
 # Overall Metrics
 col1, col2, col3, col4 = st.columns(4)
@@ -88,12 +108,12 @@ short_names = {
     "Gujarat Titans": "GT", "Royal Challengers Bengaluru": "RCB"
 }
 
-st.markdown('<div class="section-title">🏆 Season Wise Champions — Season selectा</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">🏆 Season Wise Champions — Season निवडा</div>', unsafe_allow_html=True)
 st.markdown("<p style='color:rgba(255,255,255,0.5); font-size:12px;'>खालील dropdown मधून season select करा</p>", unsafe_allow_html=True)
 
 # Season selector
 all_seasons = sorted(df["season"].unique())
-selected_season = st.selectbox("Season select", ["All Seasons"] + list(all_seasons), label_visibility="collapsed")
+selected_season = st.selectbox("Season निवड", ["All Seasons"] + list(all_seasons), label_visibility="collapsed")
 
 # Trophy cards row 1
 items = list(real_winners.items())
